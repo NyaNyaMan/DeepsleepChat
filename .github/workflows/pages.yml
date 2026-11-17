@@ -19,6 +19,9 @@ jobs:
     permissions:
       contents: read
       pages: read
+    # 仓库没开 Pages 时跳过部署，类型检查与构建照常作为 CI 跑
+    outputs:
+      pages: ${{ steps.pages.outcome == 'success' }}
     steps:
       - name: Check out source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -44,18 +47,22 @@ jobs:
         run: pnpm lint
 
       - name: Configure GitHub Pages
+        id: pages
+        continue-on-error: true
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
 
       - name: Build
         run: pnpm build
 
       - name: Upload site
+        if: steps.pages.outcome == 'success'
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: dist
 
   deploy:
     needs: build
+    if: needs.build.outputs.pages == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:

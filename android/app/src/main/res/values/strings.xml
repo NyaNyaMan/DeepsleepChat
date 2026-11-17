@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">DeepsleepChat</string>
+    <string name="saved_to">已保存到 %1$s</string>
+    <string name="save_failed">保存失败，请重试</string>
+    <string name="no_app_to_open">没有可打开该链接的应用</string>
+</resources>

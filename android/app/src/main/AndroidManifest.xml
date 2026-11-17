@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 访问 DeepSeek API -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- 语音输入（录音后上传转文字） -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!--
+      关键：WebView 启动录音时，Chromium 的音频层会调 AudioManager.setMode() 切换
+      MODE_IN_COMMUNICATION，需要这个「普通权限」。只声明 RECORD_AUDIO 的话，系统设置里
+      麦克风显示「已允许」，但采集依然起不来（日志：
+      AudioManagerAndroid: Requires MODIFY_AUDIO_SETTINGS and RECORD_AUDIO），
+      表现为点一下就失败。普通权限安装即授予，不会额外弹窗。
+    -->
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+
+    <!-- 没有麦克风的设备同样可以安装使用（仅语音输入不可用） -->
+    <uses-feature
+        android:name="android.hardware.microphone"
+        android:required="false" />
+
+    <application
+        android:allowBackup="true"
+        android:fullBackupContent="true"
+        android:hardwareAccelerated="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.ChatDemo"
+        android:usesCleartextTraffic="false">
+
+        <activity
+            android:name=".MainActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboard|keyboardHidden|navigation|uiMode|density|fontScale|locale|layoutDirection"
+            android:enableOnBackInvokedCallback="false"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:theme="@style/Theme.ChatDemo"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

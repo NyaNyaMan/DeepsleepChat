@@ -1,0 +1,90 @@
+plugins {
+    id 'com.android.application'
+}
+
+// 可选：存在 keystore.properties 时用其中的证书签名 release 包。
+// 未提供时 release 包不签名（仍可用 debug 包安装）。
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('keystore.properties')
+if (keystorePropertiesFile.exists()) {
+    keystorePropertiesFile.withInputStream { keystoreProperties.load(it) }
+}
+
+android {
+    // namespace 只决定 Java 包名与 R/BuildConfig 的位置；
+    // applicationId 才是安装标识，必须避开官方 DeepSeek App 的 com.deepseek.chat，
+    // 否则同包名不同签名会被系统判定为"无法安装"，也无法与官方 App 共存。
+    namespace 'com.deepseek.chat'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.deepseekchat.demo'
+        minSdk 26
+        targetSdk 34
+        versionCode 10
+        versionName '1.4.1'
+    }
+
+    signingConfigs {
+        release {
+            if (keystorePropertiesFile.exists()) {
+                storeFile rootProject.file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            shrinkResources false
+            if (keystorePropertiesFile.exists()) {
+                signingConfig signingConfigs.release
+            }
+        }
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    // 打包进 APK 的网页资源：来自 ../dist（npm run build 的产物）
+    sourceSets {
+        main {
+            assets.srcDirs += layout.buildDirectory.dir('generated/webAssets').get().asFile
+        }
+    }
+
+    lint {
+        abortOnError false
+    }
+}
+
+/**
+ * 把 Web 构建产物复制为 assets/www。
+ * 目录结构与站点根一致，index.html 对应 https://appassets.local/index.html。
+ */
+tasks.register('syncWebAssets', Sync) {
+    def distDir = rootProject.file('../dist')
+    doFirst {
+        if (!new File(distDir, 'index.html').exists()) {
+            throw new GradleException(
+                "未找到 Web 构建产物 ${distDir}/index.html。\n" +
+                "请先在项目根目录执行：npm install && npm run build"
+            )
+        }
+    }
+    from distDir
+    into layout.buildDirectory.dir('generated/webAssets/www')
+}
+
+tasks.named('preBuild').configure {
+    dependsOn 'syncWebAssets'
+}

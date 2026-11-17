@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 与品牌图标一致的蓝（取自图标实测色） -->
+    <color name="brand_primary">#FF5670FB</color>
+    <!-- 图标底色沿用原图的白色，蓝色鲸鱼作为前景 -->
+    <color name="ic_launcher_background">#FFFFFFFF</color>
+    <!-- 与网页背景色保持一致，避免启动闪白 -->
+    <color name="window_background">#FFFFFFFF</color>
+</resources>

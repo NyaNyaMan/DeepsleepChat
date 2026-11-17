@@ -1,0 +1,27 @@
+node_modules/
+dist/
+build/
+.pnpm-store/
+.cache/
+*.log
+.DS_Store
+.env
+.env.*
+!.env.example
+tmp/
+
+# 安卓工程
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/.idea/
+*.iml
+build-output/
+
+# 本地验收截图
+.tools-*.png
+
+# 签名（本地生成，请勿提交真实证书与口令）
+android/keystore.properties
+android/keystore/

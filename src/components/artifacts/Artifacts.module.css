@@ -1,0 +1,92 @@
+.dialog {
+  width: 560px;
+  height: auto;
+  max-height: min(80vh, 640px);
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding-right: 4px;
+  overflow-y: auto;
+}
+
+.empty {
+  padding: 48px 0;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--dsw-alias-label-tertiary);
+  text-align: center;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.cell {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--dsw-alias-border-l2);
+  background-color: var(--dsw-alias-bg-skeleton);
+}
+
+.thumbButton {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.thumb {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+
+.remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  cursor: pointer;
+
+  svg {
+    width: 10px;
+    height: 10px;
+  }
+}
+
+.meta {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 2px 6px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.55), transparent);
+  color: #fff;
+  font-size: 10px;
+  line-height: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+@media not all and (min-width: 480px) {
+  .dialog {
+    width: 100%;
+  }
+}

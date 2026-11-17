@@ -2,44 +2,45 @@
 
 English | [简体中文](README.zh-CN.md)
 
-A static chat demo powered by the DeepSeek API. No application backend is required: the browser connects directly to the configured API service.
+DeepsleepChat is an Android client for the DeepSeek API. It takes the static chat UI from [deepseek-ai/chat-demo](https://github.com/deepseek-ai/chat-demo) and wraps it in a native container, so the whole interface ships inside the APK and starts without a server or network setup. You enter an API key once on first launch.
 
-The web app is a plain static site: build it with `npm run build` and open `dist/index.html`, or upload `dist/` to any static host. Enter your API key in Settings before your first chat.
+On top of the upstream client it adds custom instructions, long-term memory, multiple API profiles, image generation with reference images, and an artifact library. The interface is laid out for phones and works entirely offline apart from the API calls you configure.
 
-This repository also ships an Android app named **DeepsleepChat**: the same UI is bundled into the APK, so it works offline out of the box and only asks for an API key once. See [ANDROID.md](ANDROID.md) for the port and packaging, and [DOCS.md](DOCS.md) for the feature/configuration manual — build with `npm run build:apk`.
+Download the APK from [Releases](https://github.com/NyaNyaMan/DeepsleepChat/releases/latest). [DOCS.md](DOCS.md) is the user manual, [ANDROID.md](ANDROID.md) explains the native wrapper, and `npm run build:apk` rebuilds the package from source.
 
-## Getting started
+## Install
 
-Install Node.js 22.12+ and pnpm, then run:
+Open the APK on the phone and allow installation from unknown sources when prompted. The package id is `com.deepseekchat.demo`, so it can sit next to the official DeepSeek app. The first launch opens Settings: pick a provider, paste an API key, and close the panel.
+
+## Build from source
+
+You need Node.js 22.12+, pnpm, JDK 17–21, and Android SDK Platform 35.
 
 ```sh
 git clone https://github.com/NyaNyaMan/DeepsleepChat.git
 cd DeepsleepChat
 pnpm install
-pnpm dev
+pnpm build:apk
 ```
 
-Open http://localhost:8090.
+The signed package lands in `build-output/app-release.apk`. Without a local keystore the script generates a throwaway one and keeps it out of git; replace it before distributing widely.
 
-To build the static site:
+## Web build
 
-```sh
-pnpm build
-```
-
-The output is written to `dist/`. Deploy it to a static web server or open `dist/index.html` directly. Opening the file directly requires browser support for storage on `file://` pages and an API service that permits their cross-origin requests.
+The same UI still builds as a plain static site: `pnpm build` writes `dist/`, which is also what gets bundled into the APK. Serve it from any static host, or open `dist/index.html` directly if the browser allows storage on `file://` pages. Attachments are picked from the system file dialog on phones; drag and drop only exists in the desktop browser.
 
 ## Features
 
 - Multiple conversations with automatic titles, renaming, and deletion; edit prompts, regenerate replies, and switch between message branches.
 - Streaming replies, deep thinking, smart search, link reading, and source citations; stop generation or continue eligible replies.
-- Upload, paste, or drag and drop attachments; use voice input and read replies aloud. A live audio spectrum appears in the first row of the input area while recording on mobile.
+- Attachments picked from the system file dialog, hold-to-talk voice input, and read-aloud replies; a live spectrum runs while you record.
 - Markdown, syntax highlighting, KaTeX math, and Mermaid diagrams.
-- Simplified Chinese and English, light and dark themes, mobile layouts, location settings, and chat history import and export.
+- Image generation with up to six numbered reference images, aspect ratio, resolution, seed, negative prompt, and an artifact library that keeps every result.
+- Custom instructions and long-term memory, multiple API profiles, Chinese and English UI, light and dark themes, and chat history import and export.
 
 ## Data and storage
 
-Your API key and settings are stored in the browser's localStorage. Conversations and original attachments are stored in IndexedDB. Local data is isolated by browser profile and site origin. Sending messages, uploading attachments, and using speech features sends the relevant content to the configured API service.
+Your API key and settings are stored in localStorage inside the app's WebView. Conversations and original attachments are stored in IndexedDB. Local data is isolated by browser profile and site origin. Sending messages, uploading attachments, and using speech features sends the relevant content to the configured API service.
 
 History import and export in Settings use ZIP archives. After confirmation and successful validation, importing replaces all local conversations and attachments. Exports include conversations and locally available original images, but exclude API keys, settings, and original non-image attachments. See the [history import/export documentation (Chinese)](src/services/chat/history/README.md) for the archive format and preservation details.
 

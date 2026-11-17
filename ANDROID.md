@@ -54,7 +54,7 @@
 ## 二、目录结构
 
 ```
-chat-demo/
+DeepsleepChat/
 ├── DOCS.md                    # 功能、配置、排障、版本历史（面向使用者）
 ├── src/                       # 原项目源码（新增 src/app/native-host.ts 与各功能模块）
 ├── scripts/

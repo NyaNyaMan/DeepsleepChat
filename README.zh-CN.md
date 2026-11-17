@@ -1,4 +1,4 @@
-# chat-demo
+# DeepsleepChat
 
 [English](README.md) | 简体中文
 
@@ -14,7 +14,7 @@
 
 ```sh
 git clone https://github.com/NyaNyaMan/DeepsleepChat.git
-cd chat-demo
+cd DeepsleepChat
 pnpm install
 pnpm dev
 ```

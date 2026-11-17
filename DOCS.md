@@ -341,6 +341,8 @@ adb install -r build-output/app-release.apk
 | `chat-demo:memory-enabled` / `memories` | 记忆开关与条目 |
 | `chat-demo:theme-preference` / `locale` / `tts-voice` / `thinking` / `search` / `sider-collapsed` | 外观与对话选项 |
 
+键名前缀沿用 `chat-demo:`，改名不回写，避免已安装用户丢失设置。
+
 **IndexedDB**（`chat-demo` 数据库，v12）：`sessions`（会话与消息）、`files`（附件）、`artifacts`（产物库）。
 
 ### 数据外发范围

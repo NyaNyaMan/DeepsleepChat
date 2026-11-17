@@ -1,4 +1,4 @@
-# chat-demo
+# DeepsleepChat
 
 English | [简体中文](README.zh-CN.md)
 
@@ -14,7 +14,7 @@ Install Node.js 22.12+ and pnpm, then run:
 
 ```sh
 git clone https://github.com/NyaNyaMan/DeepsleepChat.git
-cd chat-demo
+cd DeepsleepChat
 pnpm install
 pnpm dev
 ```

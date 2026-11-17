@@ -4,7 +4,7 @@ English | [简体中文](README.zh-CN.md)
 
 A static chat demo powered by the DeepSeek API. No application backend is required: the browser connects directly to the configured API service.
 
-You can [try the app online](https://deepseek-ai.github.io/chat-demo/) or download the archive from [Releases](https://github.com/deepseek-ai/deepseek-chat-demo/releases), extract it, and double-click `index.html` to use it locally without installation or a build. Enter your API key in Settings before your first chat.
+The web app is a plain static site: build it with `npm run build` and open `dist/index.html`, or upload `dist/` to any static host. Enter your API key in Settings before your first chat.
 
 This repository also ships an Android app named **DeepsleepChat**: the same UI is bundled into the APK, so it works offline out of the box and only asks for an API key once. See [ANDROID.md](ANDROID.md) for the port and packaging, and [DOCS.md](DOCS.md) for the feature/configuration manual — build with `npm run build:apk`.
 
@@ -13,7 +13,7 @@ This repository also ships an Android app named **DeepsleepChat**: the same UI i
 Install Node.js 22.12+ and pnpm, then run:
 
 ```sh
-git clone https://github.com/deepseek-ai/chat-demo.git
+git clone https://github.com/NyaNyaMan/DeepsleepChat.git
 cd chat-demo
 pnpm install
 pnpm dev
@@ -74,4 +74,4 @@ src/
 
 ## License
 
-[MIT](LICENSE). The build copies the license to `dist/LICENSE`; include it when distributing the app. Third-party dependencies are subject to their own licenses.
+[MIT](LICENSE). The build copies the license to `dist/LICENSE`; include it when distributing the app. This project is derived from [deepseek-ai/chat-demo](https://github.com/deepseek-ai/chat-demo), and the original copyright notice is kept in [LICENSE](LICENSE). Third-party dependencies are subject to their own licenses.

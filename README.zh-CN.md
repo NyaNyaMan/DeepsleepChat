@@ -4,7 +4,7 @@
 
 基于 DeepSeek API 的静态聊天示例。无需应用后端，浏览器直接请求配置的 API 服务。
 
-点击 [在线体验](https://deepseek-ai.github.io/chat-demo/) 即可使用，也可以前往 [Releases](https://github.com/deepseek-ai/deepseek-chat-demo/releases) 下载压缩包，解压后双击 `index.html` 在本地使用，无需安装或构建。首次使用时，请在设置中填写 API Key。
+网页端是纯静态站点：`npm run build` 后打开 `dist/index.html`，或把 `dist/` 上传到任意静态服务器。首次使用时，请在设置中填写 API Key。
 
 仓库内还附带安卓 App **DeepsleepChat**：同一套界面打进 APK，安装后即可离线启动，只需填写一次 API Key。改造与打包见 [ANDROID.md](ANDROID.md)，功能与配置手册见 [DOCS.md](DOCS.md)；执行 `npm run build:apk` 出包。
 
@@ -13,7 +13,7 @@
 准备 Node.js 22.12+ 和 pnpm：
 
 ```sh
-git clone https://github.com/deepseek-ai/chat-demo.git
+git clone https://github.com/NyaNyaMan/DeepsleepChat.git
 cd chat-demo
 pnpm install
 pnpm dev
@@ -74,4 +74,4 @@ src/
 
 ## 许可证
 
-[MIT](LICENSE)。构建会将许可证复制到 `dist/LICENSE`，分发时请一并保留；第三方依赖遵循各自的许可证。
+[MIT](LICENSE)。构建会将许可证复制到 `dist/LICENSE`，分发时请一并保留。本项目基于 [deepseek-ai/chat-demo](https://github.com/deepseek-ai/chat-demo) 改造，原始版权声明保留在 [LICENSE](LICENSE) 中；第三方依赖遵循各自的许可证。

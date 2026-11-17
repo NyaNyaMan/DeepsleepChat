@@ -2,7 +2,7 @@
 
 English | [简体中文](README.zh-CN.md)
 
-DeepsleepChat is an Android client for the DeepSeek API. It takes the static chat UI from [deepseek-ai/chat-demo](https://github.com/deepseek-ai/chat-demo) and wraps it in a native container, so the whole interface ships inside the APK and starts without a server or network setup. You enter an API key once on first launch.
+DeepsleepChat is an Android client for the DeepSeek API. It takes the static chat UI from [deepseek-ai/chat-demo](https://github.com/deepseek-ai/chat-demo) and wraps it in a native container, so the whole interface ships inside the APK and starts without a server or any additional setup. You enter an API key once on first launch.
 
 On top of the upstream client it adds custom instructions, long-term memory, multiple API profiles, image generation with reference images, and an artifact library. The interface is laid out for phones and works entirely offline apart from the API calls you configure.
 

@@ -8,7 +8,6 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Base64;
 import android.util.Log;
-import android.util.Base64;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import android.widget.Toast;
@@ -53,6 +52,7 @@ public class HostBridge {
 
     private final MainActivity activity;
     private final WebView webView;
+    private final UpdateManager updateManager;
     /** 原生 HTTP 请求用线程池，避免阻塞 JavaBridge 线程与页面 */
     private final ExecutorService httpExecutor = Executors.newCachedThreadPool();
 
@@ -61,9 +61,10 @@ public class HostBridge {
     private String targetName;
     private String targetMime;
 
-    HostBridge(MainActivity activity, WebView webView) {
+    HostBridge(MainActivity activity, WebView webView, UpdateManager updateManager) {
         this.activity = activity;
         this.webView = webView;
+        this.updateManager = updateManager;
     }
 
     @JavascriptInterface
@@ -189,6 +190,33 @@ public class HostBridge {
     @JavascriptInterface
     public String platform() {
         return "android";
+    }
+
+    @JavascriptInterface
+    public int versionCode() {
+        return BuildConfig.VERSION_CODE;
+    }
+
+    @JavascriptInterface
+    public String versionName() {
+        return BuildConfig.VERSION_NAME;
+    }
+
+    /** 下载更新包；进度与结果通过 window.__hostUpdate 回传 */
+    @JavascriptInterface
+    public void downloadUpdate(String url) {
+        activity.runOnUiThread(() -> updateManager.download(url));
+    }
+
+    /** 调起系统安装器：installing / permission / missing / invalid:原因 / noinstaller */
+    @JavascriptInterface
+    public String installUpdate() {
+        return updateManager.install();
+    }
+
+    @JavascriptInterface
+    public String updateState() {
+        return updateManager.state();
     }
 
     /**

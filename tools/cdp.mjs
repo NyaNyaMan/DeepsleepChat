@@ -11,6 +11,8 @@ const port = 9333 + Math.floor(Math.random() * 200)
 const profile = mkdtempSync(path.join(tmpdir(), 'cdp-'))
 // 默认 Windows 的 Chrome 路径，可用 CHROME_PATH 覆盖
 const chrome = process.env.CHROME_PATH ?? 'C:/Program Files/Google/Chrome/Application/chrome.exe'
+/** 可选：页面脚本执行前注入的代码，用于模拟 window.AndroidHost 等原生环境 */
+const preload = process.env.PRELOAD ?? ''
 
 const mockSource = `
 (() => {
@@ -131,6 +133,9 @@ const main = async () => {
   await s('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
   if (mock) {
     await s('Page.addScriptToEvaluateOnNewDocument', { source: mockSource })
+  }
+  if (preload) {
+    await s('Page.addScriptToEvaluateOnNewDocument', { source: preload })
   }
   await s('Page.navigate', { url })
   await sleep(3500)

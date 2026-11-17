@@ -1,6 +1,7 @@
 import { closeSettings, useSettingsDialog } from '../components/settings/settingsDialogState.js'
 import { closeSearchPanel, useSearchPanel } from '../components/search/searchPanelState.js'
 import { closeMobileSider, useMobileSider } from '../components/sider/mobileSiderState.js'
+import { checkForUpdate } from '../services/updater.js'
 
 /**
  * 安卓容器适配层。
@@ -243,6 +244,10 @@ export const setupNativeHost = () => {
   patchGetUserMedia()
   installBackHandler()
   observeTheme()
+  // 启动后静默查一次更新（24 小时内不重复），失败不打扰用户
+  window.setTimeout(() => {
+    void checkForUpdate(false)
+  }, 3000)
 }
 
 declare global {

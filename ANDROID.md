@@ -72,7 +72,9 @@ DeepsleepChat/
         └── src/main/
             ├── AndroidManifest.xml
             ├── java/com/deepseek/chat/MainActivity.java   # WebView 容器、assets 服务、文件选择、权限、返回键
-            ├── java/com/deepseek/chat/HostBridge.java     # JS 桥：保存文件、开外链、麦克风、状态栏、HTTP / multipart
+            ├── java/com/deepseek/chat/HostBridge.java     # JS 桥：保存文件、开外链、麦克风、状态栏、HTTP / multipart、更新
+            ├── java/com/deepseek/chat/UpdateManager.java  # 更新包下载、包名/版本/签名校验、调起安装器
+            ├── java/com/deepseek/chat/UpdateFileProvider.java # 把更新包只读暴露给系统安装器
             └── res/                                       # 图标、启动图配色、主题
                 ├── drawable-nodpi/ic_launcher_foreground.png   # 自适应图标前景（抠好的鲸鱼 PNG）
                 └── values/colors.xml                           # 图标底色与窗口背景
@@ -142,6 +144,7 @@ API Key 只存在本机 `localStorage`，除调用 DeepSeek 接口外不会被�
 - **文件保存**：Android 10+ 写入公共「下载」目录（无需存储权限）；8/9 写入应用专属下载目录
 - **第三方接口跨域**：生图、模型列表这类请求在网页里直接 `fetch` 会被 CORS 拦成 `Failed to fetch`。容器里统一走 `HostBridge.httpRequestAsync`（原生 `HttpURLConnection`）代发，结果异步回到 `window.__hostHttpResult`，不受同源策略限制；浏览器里自动退回普通 fetch。
 - **安全**：禁止明文 HTTP、禁止页面直接读本地文件、外链只允许 http/https/mailto/tel 交给系统处理
+- **应用内更新**：启动后静默查一次 GitHub Release（24 小时内不重复），设置里也可手动检查。下载交给系统 `DownloadManager`，完成后比对包名、versionCode 与签名证书，通过才允许安装；安装走系统安装器，不做静默安装
 - **体积**：网页产物约 4.8 MB，Release APK 约 2.0 MB（zip 压缩后），无任何第三方 SDK
 
 ## 七、常见改动
@@ -153,6 +156,7 @@ API Key 只存在本机 `localStorage`，除调用 DeepSeek 接口外不会被�
 | 图标 | 前景 `android/app/src/main/res/drawable-nodpi/ic_launcher_foreground.png`（建议 432×432、logo 占约 46%）+ `values/colors.xml` 的 `ic_launcher_background`；网页里的欢迎页图标与侧边栏字标在 `src/assets/` |
 | API 地址 | `rspack.config.ts` 中 `createConfig({ apiOrigin: 'https://...' })`，或在 `scripts/build-web.mjs` 传参 |
 | 签名 | 替换 `android/keystore/demo-release.jks`，并同步 `android/keystore.properties` |
+| 更新源 | `src/services/updater.ts` 里的 `RELEASES_API`（默认指向本仓库的 Releases） |
 | 最低系统版本 | `android/app/build.gradle` 的 `minSdk` |
 
 签名文件与口令不进 git（`.gitignore` 已排除 `android/keystore.properties` 和 `android/keystore/`）。`build:apk` 出正式包时若发现缺失会自动生成一份演示证书；正式发布请换成自己的证书，更新 `keystore.properties` 中的路径与口令即可。换证书后老用户需卸载重装（签名不一致无法覆盖安装）。

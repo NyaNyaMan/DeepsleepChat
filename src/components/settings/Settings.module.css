@@ -657,3 +657,24 @@
   line-height: 18px;
   color: var(--dsw-alias-label-tertiary);
 }
+
+/* 数据管理页底部项目信息 */
+.about {
+  margin-top: 28px;
+  padding-top: 14px;
+  border-top: 1px solid var(--dsw-alias-border-l1);
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--dsw-alias-label-tertiary);
+  word-break: break-word;
+}
+
+.aboutLink {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.aboutLink:hover {
+  color: var(--dsw-alias-label-secondary);
+}

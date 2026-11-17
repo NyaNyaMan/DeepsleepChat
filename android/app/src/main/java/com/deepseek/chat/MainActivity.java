@@ -67,6 +67,7 @@ public class MainActivity extends Activity {
     private boolean micPermissionPending;
     private boolean webViewPaused;
     private HostBridge bridge;
+    private UpdateManager updateManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -184,7 +185,8 @@ public class MainActivity extends Activity {
         webView.setWebViewClient(new ChatWebViewClient());
         webView.setWebChromeClient(new ChatChromeClient());
 
-        bridge = new HostBridge(this, webView);
+        updateManager = new UpdateManager(this, webView);
+        bridge = new HostBridge(this, webView, updateManager);
         webView.addJavascriptInterface(bridge, "AndroidHost");
     }
 
@@ -612,6 +614,9 @@ public class MainActivity extends Activity {
     protected void onDestroy() {
         if (bridge != null) {
             bridge.shutdown();
+        }
+        if (updateManager != null) {
+            updateManager.release();
         }
         if (webView != null) {
             webView.removeJavascriptInterface("AndroidHost");

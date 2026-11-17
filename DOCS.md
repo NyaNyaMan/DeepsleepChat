@@ -1,6 +1,6 @@
 # DeepsleepChat 安卓版 · 使用与配置文档
 
-> 版本 **1.4.1**（versionCode 10） · 包名 `com.deepseekchat.demo` · 更新于 2026-11-18
+> 版本 **1.5.0**（versionCode 11） · 包名 `com.deepseekchat.demo` · 更新于 2026-11-18
 >
 > 本文面向「拿到 APK 的人」和「要继续改这个项目的人」：前者看第一～九节，后者看第十～十三节。
 > 改造与打包的技术细节另见 [ANDROID.md](./ANDROID.md)。
@@ -50,6 +50,7 @@ adb install -r build-output/app-release.apk
 - 桌面名称为 **DeepsleepChat**，安装标识 `com.deepseekchat.demo`，与官方 DeepSeek App（`com.deepseek.chat`）完全不同，**两者可共存**
 - 最低系统 Android 8.0（API 26），目标 API 34，编译 API 35
 - 升级覆盖安装即可，包名与签名不变，本地数据保留
+- 自带更新检查：设置 → 数据管理 → 检查更新；下载完成后校验包名、版本与签名，再交给系统安装器
 
 **第一次打开**会自动弹出设置面板：
 
@@ -322,6 +323,7 @@ adb install -r build-output/app-release.apk
 | `ACCESS_NETWORK_STATE` | 判断网络状态 |
 | `RECORD_AUDIO` | 语音输入（运行时申请，仅点语音时弹） |
 | `MODIFY_AUDIO_SETTINGS` | WebView 录音所需的音频模式切换（普通权限） |
+| `REQUEST_INSTALL_PACKAGES` | 更新时调起系统安装器；首次安装需在系统设置里允许本应用安装未知应用 |
 
 没有存储权限：Android 10+ 写公共「下载」目录无需权限，8/9 写应用专属目录。
 
@@ -380,6 +382,10 @@ adb install -r build-output/app-release.apk
 | `platform` | 返回 `android`，网页据此启用适配层 |
 | `httpRequestAsync` | 代网页发 HTTP 请求（JSON），结果异步回调到 `window.__hostHttpResult` |
 | `httpMultipartAsync` | 代网页发 `multipart/form-data`（base64 → 原生还原字节后拼包） |
+| `versionCode` / `versionName` | 返回当前版本，供更新检查比较 |
+| `downloadUpdate` | 用系统 `DownloadManager` 下载更新包，完成后回调 `window.__hostUpdate` |
+| `installUpdate` | 校验通过后调起系统安装器，返回 `installing` / `permission` / `invalid:原因` 等状态 |
+| `updateState` | 查询本地是否已有校验通过的更新包 |
 
 **为什么要代发请求**：第三方生图、模型列表接口通常不返回 CORS 头，WebView 里直接 `fetch` 会抛 `Failed to fetch`。原生请求不受同源策略限制。前端统一出口是 `src/services/nativeHttp.ts`：容器里走桥，浏览器里自动退回 `fetch`。
 
@@ -413,6 +419,16 @@ npm run build:apk -- --debug   # 出调试包
 
 常用改动位置见 [ANDROID.md](./ANDROID.md) 第七节。仓库里不含任何证书：首次出正式包会在本地生成演示证书与随机口令，均写入被 git 忽略的文件。正式分发务必换成自己的证书。
 
+**发版约定**：应用内更新读的是 GitHub Releases 的最新一条，发布时请保持这三项一致，否则不会提示更新：
+
+| 项目 | 要求 |
+| --- | --- |
+| 标签 | `vX.Y.Z`，与 `versionName` 相同 |
+| 资产 | 至少一个 `.apk`，文件名随意，建议 `DeepsleepChat-X.Y.Z.apk` |
+| 说明首行 | 写 `versionCode=N`，N 与 `build.gradle` 里的 versionCode 一致 |
+
+测试版勾选「Pre-release」，不会被 `/releases/latest` 取到，正式用户不会收到。
+
 ---
 
 ## 十二、故障排查
@@ -428,6 +444,9 @@ npm run build:apk -- --debug   # 出调试包
 | 自定义对话接口报跨域 | 聊天流式请求仍走 `fetch`，需要接口允许 CORS | 给网关加 CORS 头，或改用 DeepSeek 官方 |
 | 导出历史后再导入，生图消息为空 | 导出格式只认文本/思考类块 | 已知限制，见第十三节 |
 | 参考图刷新后消失 | 参考图只存在内存 | 存进产物库再取回 |
+| 检查更新失败 | GitHub API 不可达或限流（匿名 60 次/小时） | 稍后重试，或直接到 Releases 手动下载 |
+| 点安装没反应 / 提示被拦截 | 未允许本应用安装未知应用 | 按提示在系统设置里打开，再回来点安装 |
+| 更新时提示签名不一致 | 安装包不是同一份证书签的 | 只能卸载旧版重装；之后固定使用同一证书 |
 | 构建卡在下载 Gradle/依赖 | `services.gradle.org`、`dl.google.com` 网络慢 | 用镜像：wrapper 指向腾讯镜像，`~/.gradle/init.gradle` 加阿里云仓库 |
 
 ---
@@ -440,6 +459,7 @@ npm run build:apk -- --debug   # 出调试包
 4. **附件/语音/朗读绑定 DeepSeek 官方接口**：其 Files 与语音工具接口没有 OpenAI 兼容替代。
 5. **参考图字段是通用约定**：`image` / `image_url` / `images` / multipart 四种已覆盖主流，仍有个别网关自定义字段名，可用「生图额外参数」自行补。
 6. **演示签名**：发布前需换证书。
+7. **更新需用户确认**：安卓不允许普通应用静默安装，下载和校验是自动的，最后一步要手动点「安装」。
 
 ---
 
@@ -457,6 +477,7 @@ npm run build:apk -- --debug   # 出调试包
 | 1.3.0 | 8 | 参考图 P1/P2 编号、会话内生图任务态、完整生图参数、产物库、多套模型配置、主模型参数、图标 logo 缩至 3/4 |
 | 1.4.0 | 9 | 参考图发送方式（auto / image / 裸 Base64 / image_url / images / multipart）、原生 multipart、字段被拒与纯文生图模型的明确提示 |
 | 1.4.1 | 10 | 应用名称改为 DeepsleepChat，同步桌面名称、页面标题、字标替代文本、构建脚本与文档 |
+| 1.5.0 | 11 | 应用内检查更新：读取 GitHub Release、下载 APK、校验包名/版本/签名后调起系统安装器；数据管理页底部补项目信息 |
 
 ---
 
@@ -483,3 +504,5 @@ npm run build:apk -- --debug   # 出调试包
 | 接口自检（获取模型 / 测试连接） | `src/services/models.ts` |
 | 一键打包 | `scripts/build-apk.mjs` |
 | 网页构建 | `scripts/build-web.mjs` |
+| 应用内更新（检查 / 下载 / 校验 / 安装） | `src/services/updater.ts` + `android/.../UpdateManager.java` |
+| 更新包只读 Provider | `android/.../UpdateFileProvider.java` |

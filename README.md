@@ -37,6 +37,7 @@ The same UI still builds as a plain static site: `pnpm build` writes `dist/`, wh
 - Markdown, syntax highlighting, KaTeX math, and Mermaid diagrams.
 - Image generation with up to six numbered reference images, aspect ratio, resolution, seed, negative prompt, and an artifact library that keeps every result.
 - Custom instructions and long-term memory, multiple API profiles, Chinese and English UI, light and dark themes, and chat history import and export.
+- Built-in update check: reads the latest GitHub release, verifies package name, version, and signing certificate, then hands the APK to the system installer.
 
 ## Data and storage
 

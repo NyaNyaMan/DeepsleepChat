@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import {
   IconDarkOutline16,
   IconDataOutline16,
@@ -36,6 +36,15 @@ import { showToast } from '../base/toastState.js'
 import { useApiKeyEditor } from './ApiKeyField.js'
 import { ApiSettings } from './ApiSettings.js'
 import { PersonalSettings } from './PersonalSettings.js'
+import {
+  checkForUpdate,
+  currentVersion,
+  downloadUpdate,
+  installUpdate,
+  isUpdateSupported,
+  refreshUpdateState,
+  useUpdate,
+} from '../../services/updater.js'
 import { closeSettings, useSettingsDialog, type SettingsSection } from './settingsDialogState.js'
 import styles from './Settings.module.css'
 
@@ -131,6 +140,8 @@ const SettingsContent = () => {
                   </Button>
                 }
               />
+              <UpdateSetting />
+              <AboutFooter />
             </>
           ) : null}
         </div>
@@ -403,6 +414,121 @@ const ThemeSetting = () => {
 }
 
 /** `reason` 为失败原因的文案 key，展示时按当前语言翻译后填入 `message` 参数。 */
+/** 应用内更新：检查、下载、安装，状态由原生下载回调驱动 */
+const UpdateSetting = () => {
+  const t = useTranslate()
+  const phase = useUpdate((state) => state.phase)
+  const latest = useUpdate((state) => state.version)
+
+  useEffect(() => {
+    refreshUpdateState()
+    void checkForUpdate(false)
+  }, [])
+
+  if (!isUpdateSupported()) {
+    return null
+  }
+
+  const status: Status = (() => {
+    switch (phase) {
+      case 'checking':
+        return { key: 'updateChecking' }
+      case 'latest':
+        return { key: 'updateLatest' }
+      case 'available':
+        return { key: 'updateAvailable', params: { version: latest ?? '' } }
+      case 'downloading':
+        return { key: 'updateDownloading' }
+      case 'ready':
+        return { key: 'updateReady' }
+      case 'error':
+        return { key: 'updateFailed', error: true }
+      case 'unsupported':
+        return { key: 'updateUnsupported' }
+      default:
+        return { key: 'updateCurrent', params: { version: currentVersion() } }
+    }
+  })()
+
+  const busy = phase === 'checking' || phase === 'downloading'
+
+  const act = () => {
+    if (phase === 'available') {
+      downloadUpdate()
+      return
+    }
+    if (phase === 'ready') {
+      const result = installUpdate()
+      if (result === 'installing') {
+        showToast(t('updateInstalling'))
+      } else if (result === 'permission') {
+        showToast(t('updatePermission'))
+      } else if (result.startsWith('invalid')) {
+        showToast(t('updateInvalid'))
+      } else {
+        showToast(t('updateFailed'))
+      }
+      return
+    }
+    void checkForUpdate(true)
+  }
+
+  const label =
+    phase === 'available' ? t('updateDownload') : phase === 'ready' ? t('updateInstall') : t('checkUpdate')
+
+  return (
+    <SettingCell
+      label={t('checkUpdate')}
+      status={status}
+      action={
+        <Button
+          variant="outlined"
+          size="m"
+          className={styles.cellButton}
+          disabled={busy}
+          onClick={act}
+        >
+          {label}
+        </Button>
+      }
+    />
+  )
+}
+
+/** 数据管理页底部的项目信息，保持单行小字，不抢内容 */
+const AboutFooter = () => {
+  const t = useTranslate()
+  const version = currentVersion()
+  return (
+    <div className={styles.about}>
+      <div>
+        {version ? `${t('aboutVersion', { version })} · ` : 'DeepsleepChat · '}
+        {t('aboutLicense')}
+      </div>
+      <div>
+        <a
+          className={styles.aboutLink}
+          href="https://github.com/deepseek-ai/chat-demo"
+          target="_blank"
+          rel="noreferrer"
+        >
+          {t('aboutBasedOn')}
+        </a>
+      </div>
+      <div>
+        <a
+          className={styles.aboutLink}
+          href="https://github.com/NyaNyaMan/DeepsleepChat"
+          target="_blank"
+          rel="noreferrer"
+        >
+          github.com/NyaNyaMan/DeepsleepChat
+        </a>
+      </div>
+    </div>
+  )
+}
+
 type Status = (TranslationMessage & { error?: boolean; reason?: TranslationKey }) | null
 
 /** 导出失败附带原因：预期的错误用对应文案作原因，其他错误用错误信息。 */

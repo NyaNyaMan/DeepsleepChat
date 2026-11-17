@@ -317,4 +317,22 @@ export const en = {
   imagePathHint: 'Leave empty for /images/generations',
   imageRefFieldRejected:
     'The endpoint rejected the reference-image field ({message}). Switch the reference mode to multipart or image_url in Settings → API.',
+
+  checkUpdate: 'Check for updates',
+  updateCurrent: 'Version {version}',
+  updateChecking: 'Checking for updates…',
+  updateLatest: 'You are up to date',
+  updateAvailable: 'Version {version} is available',
+  updateDownloading: 'Downloading, tap Install when it finishes',
+  updateReady: 'Update downloaded',
+  updateDownload: 'Download',
+  updateInstall: 'Install',
+  updateInstalling: 'Opening the installer…',
+  updatePermission: 'Allow installing unknown apps, then tap Install again',
+  updateUnsupported: 'Available in the Android app only',
+  updateFailed: 'Could not check for updates. Try again later',
+  updateInvalid: 'The downloaded package failed verification',
+  aboutVersion: 'DeepsleepChat {version}',
+  aboutBasedOn: 'Based on deepseek-ai/chat-demo',
+  aboutLicense: 'MIT License',
 } satisfies Record<keyof typeof zh, string>

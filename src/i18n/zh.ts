@@ -303,4 +303,22 @@ export const zh = {
   imagePathHint: '留空用默认 /images/generations',
   imageRefFieldRejected:
     '接口不接受当前的参考图字段（{message}）。可在「设置 → 接口 → 参考图发送方式」切换为 multipart 或 image_url 再试。',
+
+  checkUpdate: '检查更新',
+  updateCurrent: '当前版本 {version}',
+  updateChecking: '正在检查新版本…',
+  updateLatest: '已是最新版本',
+  updateAvailable: '发现新版本 {version}',
+  updateDownloading: '正在下载，完成后点「安装」',
+  updateReady: '新版本已下载',
+  updateDownload: '下载',
+  updateInstall: '安装',
+  updateInstalling: '正在打开系统安装器…',
+  updatePermission: '请允许本应用安装未知应用，然后重新点安装',
+  updateUnsupported: '仅安卓 App 内可用',
+  updateFailed: '检查更新失败，请稍后再试',
+  updateInvalid: '安装包校验未通过',
+  aboutVersion: 'DeepsleepChat {version}',
+  aboutBasedOn: '基于 deepseek-ai/chat-demo 改造',
+  aboutLicense: 'MIT 许可证',
 } as const

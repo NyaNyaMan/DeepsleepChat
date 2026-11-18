@@ -308,7 +308,7 @@ export const en = {
   imageRefModeImages: 'images field',
   imageRefModeEdits: 'multipart upload (OpenAI /images/edits)',
   imageRefModeOff: 'Do not send references',
-  imageRefModeEffective: 'Effective request: {path} ({mode})',
+  imageRefModeEffective: 'With reference images: {path} ({mode}); text-only still uses /images/generations',
   imageRefWarnUnsupported:
     'This model looks text-to-image only, so references may be ignored. Use a model with image input such as Seedream 4.0+ or gpt-image-1.',
   imageRefWarnOff:

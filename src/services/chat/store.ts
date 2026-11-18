@@ -1,10 +1,11 @@
 import { create } from 'zustand'
 import { createId } from '../../utils/id.js'
 import { ApiError, streamMessage } from '../api/client.js'
-import type { ChatModel, CreateMessageRequest } from '../api/types.js'
+import type { ChatModel, CreateMessageRequest, FileBlockParam } from '../api/types.js'
 import { extractFileIds, getFileErrorCode, isRetryableApiError } from '../api/errors.js'
 import { cancelUpload, describeUploadError, uploadAttachment, useUploads } from '../attachments.js'
 import { useSettings } from '../settings.js'
+import { generatedImageName, imageUrlToBlob } from '../image.js'
 import { learnFromTurn } from '../memory.js'
 import { buildSystemPrompt } from '../personalization.js'
 import { appendBranch, getVisibleMessages, normalizeSession, selectVersion } from './branches.js'
@@ -29,6 +30,7 @@ import {
   toSessionSummary,
   type AssistantMessage,
   type FileAttachment,
+  type ImagePart,
   type Message,
   type ReplyBlock,
   type Session,
@@ -111,6 +113,8 @@ const sessionAccess = new Map<string, number>()
 const unsavedSessions = new Set<string>()
 /** 保存失败时保留原件，重试成功后才释放。 */
 const pendingFiles = new Map<string, db.StoredFile[]>()
+/** 生成图片上传到 Files API 后的 file_id，按「消息 id:图片序号」缓存，避免每轮重复上传 */
+const generatedImageFiles = new Map<string, string>()
 const deletingSessions = new Set<string>()
 const deletionTasks = new Set<Promise<boolean>>()
 const streamFlushes = new Map<string, () => void>()
@@ -656,13 +660,17 @@ export const finishImageTask = (
           blocks: [{ ...template, status: 'error', error: result.error }],
         }
       }
+      const now = new Date()
+      const pad = (value: number) => String(value).padStart(2, '0')
+      const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`
       return {
         ...message,
-        blocks: result.urls.map((url) => ({
+        blocks: result.urls.map((url, index) => ({
           ...template,
           url,
           status: 'done' as const,
           size: result.size,
+          fileName: generatedImageName(url, stamp, index + 1),
         })),
       }
     }),
@@ -916,6 +924,44 @@ const ensureServerId = async (apiKey: string, file: FileAttachment): Promise<str
   return uploadAttachment(apiKey, file.id, blob, file.name, file.isImage)
 }
 
+/**
+ * 把上一轮生成的图片作为当前提问的图片输入：先上传到 Files API，再拼成 file block。
+ * 只处理紧邻的上一轮助手消息，避免把很久以前的图片也带进上下文。
+ */
+const prepareGeneratedImageBlocks = async (
+  apiKey: string,
+  history: Message[]
+): Promise<FileBlockParam[]> => {
+  const last = history.at(-1)
+  if (!last || last.role !== 'assistant' || last.status !== 'done') {
+    return []
+  }
+  const images = last.blocks
+    .filter((block): block is ImagePart => block.type === 'image' && Boolean(block.url))
+    .slice(0, 4)
+  const blocks: FileBlockParam[] = []
+  for (const [index, image] of images.entries()) {
+    const key = `${last.id}:${index}`
+    let fileId = generatedImageFiles.get(key)
+    if (!fileId) {
+      const blob = await imageUrlToBlob(image.url)
+      if (!blob) {
+        continue
+      }
+      const name =
+        image.fileName ?? generatedImageName(image.url, last.id.slice(0, 8), index + 1)
+      try {
+        fileId = await uploadAttachment(apiKey, `generated-${key}`, blob, name, true)
+        generatedImageFiles.set(key, fileId)
+      } catch {
+        continue
+      }
+    }
+    blocks.push({ type: 'image', source: { type: 'file', file_id: fileId } })
+  }
+  return blocks
+}
+
 /** 用会话里的最新消息替换请求快照：重传前会重置附件的 serverId，快照必须跟着更新 */
 const refreshRequest = (sessionId: string, request: Request): Request => {
   const session = getSession(sessionId)
@@ -1114,12 +1160,18 @@ const streamReply = async (sessionId: string, initial: AssistantMessage, request
         reply = { ...reply, latestReminder }
         updateReply(sessionId, reply)
         persist(sessionId)
+        // 上一轮生成的图片作为当前提问的图片输入，让模型能回答「上面这张图是什么」
+        const generatedImages = await prepareGeneratedImageBlocks(
+          useSettings.getState().apiKey ?? '',
+          prepared.history
+        )
         const messages = toRequestMessages(
           prepared.history,
           prepared.question,
           prepared.prefix,
           initial.thinking ?? false,
-          latestReminder
+          latestReminder,
+          generatedImages
         )
         const events = streamMessage(
           useSettings.getState().apiKey ?? '',

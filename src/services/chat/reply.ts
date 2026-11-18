@@ -200,9 +200,12 @@ const isUsableReply = (message: Message): message is AssistantMessage =>
   !message.blocks.some((block) => block.type === 'text' && block.isTemplate) &&
   getReplyText(message) !== ''
 
-/** 有文件时用内容块数组：先文件后文本，文件按 Files API 的 file_id 引用 */
-const toUserParam = ({ content, files }: UserMessage): MessageParam => {
-  const blocks = toFileBlocks(files)
+/** 有文件或额外图片时用内容块数组：先文件后文本，文件按 Files API 的 file_id 引用 */
+const toUserParam = (
+  { content, files }: UserMessage,
+  extraBlocks: FileBlockParam[] = []
+): MessageParam => {
+  const blocks = [...toFileBlocks(files), ...extraBlocks]
   return blocks.length === 0
     ? { role: 'user', content }
     : {
@@ -304,7 +307,8 @@ export const toRequestMessages = (
   question: UserMessage,
   prefix?: AssistantMessage,
   thinking = prefix?.thinking ?? false,
-  latestReminder?: string
+  latestReminder?: string,
+  generatedImages: FileBlockParam[] = []
 ): MessageParam[] => {
   const messages: MessageParam[] = []
   let previousReminder: string | undefined
@@ -324,7 +328,7 @@ export const toRequestMessages = (
     messages.push(toUserParam(user), toAssistantParam(reply))
   }
   appendReminder(latestReminder)
-  messages.push(toUserParam(question))
+  messages.push(toUserParam(question, generatedImages))
   if (prefix?.prefix) {
     const assistant = toAssistantParam(prefix, true, thinking)
     // 没有非空白正文或有效思考时直接重发原问题，避免服务端拒绝空 Prefill。

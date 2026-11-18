@@ -79,6 +79,8 @@ export type ImagePart = {
   paramHint?: string
   /** 开始生成的时间戳，用于显示已用时长 */
   startedAt?: number
+  /** 带扩展名的文件名，用于作为后续对话的图片输入 */
+  fileName?: string
 }
 
 export type ReplyBlock = ThinkingPart | TextPart | ServerToolBlock | ImagePart

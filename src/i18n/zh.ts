@@ -295,7 +295,7 @@ export const zh = {
   imageRefModeImages: 'images 字段',
   imageRefModeEdits: 'multipart 上传（OpenAI /images/edits）',
   imageRefModeOff: '不发送参考图',
-  imageRefModeEffective: '当前实际请求：{path}（{mode}）',
+  imageRefModeEffective: '带参考图时请求：{path}（{mode}）；纯文字仍走 /images/generations',
   imageRefWarnUnsupported:
     '该模型名看起来只支持文生图，参考图可能被忽略；换成 Seedream 4.0+ 或 gpt-image-1 这类支持图像输入的模型。',
   imageRefWarnOff: '当前设置不会发送参考图，生成结果只依据提示词。',

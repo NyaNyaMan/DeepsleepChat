@@ -28,7 +28,7 @@ export const GeneratedImage = ({ block, sessionId }: { block: ImagePart; session
   const save = () => {
     const link = document.createElement('a')
     link.href = block.url
-    link.download = `deepsleepchat-${Date.now()}.png`
+    link.download = block.fileName ?? `deepsleepchat-${Date.now()}.png`
     link.click()
   }
 

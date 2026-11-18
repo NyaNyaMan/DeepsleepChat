@@ -62,6 +62,18 @@ export const ImagePanel = ({
   const [advanced, setAdvanced] = useState(false)
   const [enhancing, setEnhancing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Android WebView 复用同一个 file input 时，选择过一次后可能不再弹选择器；
+  // 每次选完/打开前都重置并重建 input，保证反复增删参考图后仍能继续选。
+  const [inputKey, setInputKey] = useState(0)
+
+  const openPicker = () => {
+    const input = fileInputRef.current
+    if (!input) {
+      return
+    }
+    input.value = ''
+    input.click()
+  }
 
   const size = resolveImageSize(params)
   const patch = (next: Partial<ImageParams>) => setParams((current) => ({ ...current, ...next }))
@@ -155,21 +167,24 @@ export const ImagePanel = ({
             <button
               type="button"
               className={styles.refAdd}
-              onClick={() => fileInputRef.current?.click()}
+              onClick={openPicker}
             >
               <IconImageOutline16 />
               <span>{t('imageAddRef')}</span>
             </button>
           ) : null}
           <input
+            key={inputKey}
             ref={fileInputRef}
             type="file"
             accept="image/*"
             multiple
             hidden
             onChange={(event) => {
-              void pickRefs(Array.from(event.target.files ?? []))
+              const files = Array.from(event.target.files ?? [])
               event.target.value = ''
+              setInputKey((value) => value + 1)
+              void pickRefs(files)
             }}
           />
         </div>

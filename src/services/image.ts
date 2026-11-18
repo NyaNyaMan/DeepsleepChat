@@ -31,6 +31,47 @@ export type ImageParams = {
 
 export type ImageRef = { label: string; src: string }
 
+/** 从 data URL 或图片地址推断扩展名，统一用无点形式（png/jpg/webp…） */
+export const imageExtensionFromUrl = (url: string): string => {
+  const data = splitDataUrl(url)
+  if (data) {
+    const subtype = data.mime.split('/')[1]?.toLowerCase() || 'png'
+    return subtype === 'jpeg' ? 'jpg' : subtype.replace(/[^a-z0-9]/g, '') || 'png'
+  }
+  const match = /\.([a-z0-9]{2,5})(?:[?#]|$)/i.exec(url)
+  return match?.[1]?.toLowerCase() || 'png'
+}
+
+/** 生图结果的文件名：generated-YYYYMMDD-HHmmss-序号.ext */
+export const generatedImageName = (url: string, stamp: string, index: number): string =>
+  `generated-${stamp}-${index}.${imageExtensionFromUrl(url)}`
+
+/** 把生成结果转成 Blob，供 Files API 作为图片输入上传；远程地址取不到时返回 null */
+export const imageUrlToBlob = async (url: string): Promise<Blob | null> => {
+  const data = splitDataUrl(url)
+  if (data) {
+    try {
+      const binary = atob(data.base64)
+      const bytes = new Uint8Array(binary.length)
+      for (let i = 0; i < binary.length; i += 1) {
+        bytes[i] = binary.charCodeAt(i)
+      }
+      return new Blob([bytes], { type: data.mime })
+    } catch {
+      return null
+    }
+  }
+  if (!/^https?:/i.test(url)) {
+    return null
+  }
+  try {
+    const response = await fetch(url)
+    return response.ok ? await response.blob() : null
+  } catch {
+    return null
+  }
+}
+
 export type ImageRequest = {
   /** 用户原始描述（展示与记录用） */
   prompt: string
@@ -79,24 +120,40 @@ const LONG_SIDE: Record<ImageResolution, number> = { '1K': 1024, '2K': 1536, '4K
 
 const round8 = (value: number) => Math.max(256, Math.round(value / 8) * 8)
 
+/** gpt-image 系列只接受这三档尺寸，其他尺寸会被上游直接拒绝 */
+const snapGptImageSize = (width: number, height: number) => {
+  if (width === height) {
+    return { width: 1024, height: 1024 }
+  }
+  return width > height ? { width: 1536, height: 1024 } : { width: 1024, height: 1536 }
+}
+
 /** 按比例与分辨率算出实际宽高；custom 直接用用户填的值 */
 export const resolveImageSize = (
   params: ImageParams
 ): { width: number; height: number; size: string; label: string } => {
+  let width: number
+  let height: number
   if (params.aspect === 'custom') {
-    const width = round8(params.width)
-    const height = round8(params.height)
-    return { width, height, size: `${width}x${height}`, label: `${width}×${height}` }
+    width = round8(params.width)
+    height = round8(params.height)
+  } else {
+    const [w, h] = RATIOS[params.aspect]
+    const long = LONG_SIDE[params.resolution]
+    width = round8(w >= h ? long : (long * w) / h)
+    height = round8(h >= w ? long : (long * h) / w)
   }
-  const [w, h] = RATIOS[params.aspect]
-  const long = LONG_SIDE[params.resolution]
-  const width = round8(w >= h ? long : (long * w) / h)
-  const height = round8(h >= w ? long : (long * h) / w)
+  if (useSettings.getState().imageModel.toLowerCase().includes('gpt-image')) {
+    // 比例仍按用户选择判断横竖，像素强制落到 gpt-image 支持的档位
+    const snapped = snapGptImageSize(width, height)
+    width = snapped.width
+    height = snapped.height
+  }
   return {
     width,
     height,
     size: `${width}x${height}`,
-    label: `${params.aspect} · ${width}×${height}`,
+    label: params.aspect === 'custom' ? `${width}×${height}` : `${params.aspect} · ${width}×${height}`,
   }
 }
 
@@ -305,13 +362,14 @@ const requestEdits = async (
     }
   }
 
+  // 单张用 image，多张用 image[]（OpenAI 兼容网关的通用约定）
+  const fileField = files.length > 1 ? 'image[]' : 'image'
   const response = await (async () => {
     try {
       return await httpMultipart(plan.url, {
         fields,
-        // 官方约定：多张时重复同一个 image 字段，服务端按顺序收成数组
         files: files.map((file, index) => ({
-          field: 'image',
+          field: fileField,
           name: `p${index + 1}.${file.ext}`,
           mime: file.mime,
           base64: file.base64,
@@ -351,6 +409,13 @@ export const generateImage = async (
     return requestEdits(request, plan, size, label, signal)
   }
 
+  // gpt-image 在 auto 下会得到 edits 计划；但纯文字生图没有图片，必须改走 generations，
+  // 否则会把 JSON POST 到只接受 multipart 的 /images/edits（上游返回通用 request-id 错误）。
+  const url =
+    request.refs.length === 0 && plan.mode === 'edits'
+      ? `${imageEndpoint()}${resolvePath('image')}`
+      : plan.url
+
   const withRefs = request.refs.length > 0 && plan.mode !== 'off'
   const refValues = withRefs
     ? await Promise.all(
@@ -364,18 +429,22 @@ export const generateImage = async (
       )
     : []
 
+  const gptImage = imageModel.toLowerCase().includes('gpt-image')
   const body: Record<string, unknown> = {
     model: imageModel.trim(),
     prompt: composePrompt(request),
     n: Math.min(4, Math.max(1, params.count)),
     size,
-    ...(params.negativePrompt.trim() ? { negative_prompt: params.negativePrompt.trim() } : {}),
-    ...(params.seed !== null ? { seed: params.seed } : {}),
+    // gpt-image 系列不认识这几个扩展字段，严格网关会直接 400
+    ...(!gptImage && params.negativePrompt.trim()
+      ? { negative_prompt: params.negativePrompt.trim() }
+      : {}),
+    ...(!gptImage && params.seed !== null ? { seed: params.seed } : {}),
     ...(withRefs
       ? {
           [plan.mode === 'image-url' ? 'image_url' : plan.mode === 'images' ? 'images' : 'image']:
             refValues,
-          image_weight: params.refWeight,
+          ...(gptImage ? {} : { image_weight: params.refWeight }),
         }
       : {}),
     ...parseExtra(params.extra),
@@ -383,7 +452,7 @@ export const generateImage = async (
 
   const response = await (async () => {
     try {
-      return await httpText(plan.url, {
+      return await httpText(url, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${imageKey()}`,

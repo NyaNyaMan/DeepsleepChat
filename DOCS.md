@@ -1,6 +1,6 @@
 # DeepsleepChat 安卓版 · 使用与配置文档
 
-> 版本 **1.5.0**（versionCode 11） · 包名 `com.deepseekchat.demo` · 更新于 2026-11-18
+> 版本 **1.5.1**（versionCode 12） · 包名 `com.deepseekchat.demo` · 更新于 2026-11-19
 >
 > 本文面向「拿到 APK 的人」和「要继续改这个项目的人」：前者看第一～九节，后者看第十～十三节。
 > 改造与打包的技术细节另见 [ANDROID.md](./ANDROID.md)。
@@ -478,6 +478,7 @@ npm run build:apk -- --debug   # 出调试包
 | 1.4.0 | 9 | 参考图发送方式（auto / image / 裸 Base64 / image_url / images / multipart）、原生 multipart、字段被拒与纯文生图模型的明确提示 |
 | 1.4.1 | 10 | 应用名称改为 DeepsleepChat，同步桌面名称、页面标题、字标替代文本、构建脚本与文档 |
 | 1.5.0 | 11 | 应用内检查更新：读取 GitHub Release、下载 APK、校验包名/版本/签名后调起系统安装器；数据管理页底部补项目信息 |
+| 1.5.1 | 12 | 生图修复：纯文字请求改走 generations；gpt-image 尺寸/参数兼容；参考图选择器可重复使用；生成图片进入后续对话上下文；生成文件使用带扩展名的名称 |
 
 ---
 
